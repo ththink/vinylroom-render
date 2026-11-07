@@ -9,10 +9,10 @@ concurrency: { group: render, cancel-in-progress: true }
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     env:
       BL: blender-4.2.3-linux-x64
-      SCRIPT: tools/blender_scene/pilot_cup.py
+      SCRIPT: tools/room/room_v1.py
       DEST_BRANCH: blender-pilot
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
         run: |
           set -o pipefail; mkdir -p render
           START=$(date +%s)
-          ./$BL/blender -b -P $SCRIPT -- --outdir render 2>&1 | tee render/last_log.txt
+          ./$BL/blender -b -P $SCRIPT -- --outdir render --res 1200 --samples 128 2>&1 | tee render/last_log.txt
           echo "render_seconds=$(( $(date +%s) - START ))" | tee -a render/last_log.txt
       - name: 결과를 LPlayList로 보내기 (실패해도 로그는 보냄)
         if: always()
