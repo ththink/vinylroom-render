@@ -1,0 +1,37 @@
+# Blender 렌더 (공개 저장소 = Actions 무료 무제한)
+# 결과는 비공개 LPlayList 저장소의 blender-pilot 브랜치 render/ 폴더로 보낸다 (Secret: LPLAYLIST_TOKEN)
+name: blender-render
+on:
+  push:
+    paths: ['tools/**', '.github/workflows/blender.yml']
+  workflow_dispatch:
+concurrency: { group: render, cancel-in-progress: true }
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      BL: blender-4.2.3-linux-x64
+      SCRIPT: tools/blender_scene/pilot_cup.py
+      DEST_BRANCH: blender-pilot
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1
+          curl -sL https://download.blender.org/release/Blender4.2/$BL.tar.xz | tar xJ
+      - name: 렌더
+        run: |
+          set -o pipefail; mkdir -p render
+          START=$(date +%s)
+          ./$BL/blender -b -P $SCRIPT -- --outdir render 2>&1 | tee render/last_log.txt
+          echo "render_seconds=$(( $(date +%s) - START ))" | tee -a render/last_log.txt
+      - name: 결과를 LPlayList로 보내기 (실패해도 로그는 보냄)
+        if: always()
+        env: { TK: '${{ secrets.LPLAYLIST_TOKEN }}' }
+        run: |
+          git clone -q --depth 1 -b $DEST_BRANCH https://x-access-token:$TK@github.com/ththink/LPlayList.git dest
+          mkdir -p dest/render && cp -r render/. dest/render/
+          cd dest && git config user.name render-bot && git config user.email render-bot@users.noreply.github.com
+          git add render && git commit -qm "render: ${{ job.status }} ($GITHUB_SHA)" && git push -q || echo "변경 없음"
