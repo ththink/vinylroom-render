@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 180
     env:
       BL: blender-4.2.3-linux-x64
-      SCRIPT: tools/room/room_v1.py
+      SCRIPT: tools/room/room_v2.py
       DEST_BRANCH: blender-pilot
     steps:
       - uses: actions/checkout@v4
