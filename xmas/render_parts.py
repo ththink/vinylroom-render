@@ -216,7 +216,7 @@ def bow_bell(parts, x, y, gold, k=1.7):
 def tonearm(parts):
     gold = mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18)
     brass = mat('brass', (0.30, 0.18, 0.06), 1.0, 0.3)
-    pts = [(0, 0), (40, -150), (76, -336), (66, -500), (43, -662), (-10, -725), (-65, -749)]
+    pts = [(0, 0), (40, -150), (76, -336), (66, -500), (43, -662), (-2, -724), (-34, -772)]
     cu = bpy.data.curves.new('arm', 'CURVE')
     cu.dimensions = '3D'
     sp = cu.splines.new('BEZIER')
@@ -244,9 +244,9 @@ def tonearm(parts):
     wine = mat('wine', (0.32, 0.04, 0.03), 0.6, 0.35)
     silver = mat('silver', (0.9, 0.9, 0.92), 1.0, 0.22)
     slotm = mat('slot', (0.10, 0.05, 0.02), 0.0, 0.5)
-    shell = [(-17, -6), (17, -6), (37, 84), (-37, 84)]
+    shell = [(-20, -6), (20, -6), (36, 86), (-36, 86)]
     prism([(x * 1.06, y * 1.04 - 1) for x, y in shell], 6, (ex, ey, 35), rz, wine, parts, 3)
-    prism(shell, 9, (ex, ey, 40), rz, gold, parts, 8)
+    prism(shell, 9, (ex, ey, 40), rz, gold, parts, 4.5)
     for (sx, sy, sa) in [(-19, 40, 35), (16, 14, 30), (9, 64, 30)]:
         wx, wy = l2w(sx, sy)
         o = cyl(5.5, 1.0, (wx, wy, 49.4), slotm, parts, 0.3)
@@ -315,6 +315,6 @@ def run_job(name, builder, cx, cy, w, h, a):
 
 if __name__ == '__main__':
     a = get_args()
-    run_job('tonearm', tonearm, 0, -380, 600, 1000, a)
+    run_job('tonearm', tonearm, 0, -400, 600, 1040, a)
     run_job('knobs', knobs, 200, 0, 600, 200, a)
     print('done')
