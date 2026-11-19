@@ -237,10 +237,34 @@ def tonearm(parts):
     d = Vector((-0.57, -0.82)).normalized()
     ex, ey = pts[-1]
     rz = math.atan2(d.y, d.x) - math.pi / 2
-    prism([(-14, -12), (14, -12), (27, 92), (-27, 92)], 9, (ex, ey, 40), rz, gold, parts, 4)
-    box((34, 46, 16), (ex + d.x * 82, ey + d.y * 82, 30), rz, brass, parts, 4)
-    side = Vector((-d.y, d.x))
-    box((5, 54, 5), (ex + d.x * 26 + side.x * 36, ey + d.y * 26 + side.y * 36, 46), rz + 0.5, gold, parts, 2)
+    # 헤드셸: 레퍼런스처럼 위가 좁고 아래가 넓은 방패꼴 판 + 슬롯 3개(은색 나사) + 갈색 붉은 아랫단 + 바늘
+    cr, sr = math.cos(rz), math.sin(rz)
+    def l2w(lx, ly):
+        return (ex + lx * cr - ly * sr, ey + lx * sr + ly * cr)
+    wine = mat('wine', (0.32, 0.04, 0.03), 0.6, 0.35)
+    silver = mat('silver', (0.9, 0.9, 0.92), 1.0, 0.22)
+    slotm = mat('slot', (0.10, 0.05, 0.02), 0.0, 0.5)
+    shell = [(-17, -6), (17, -6), (37, 84), (-37, 84)]
+    prism([(x * 1.06, y * 1.04 - 1) for x, y in shell], 6, (ex, ey, 35), rz, wine, parts, 3)
+    prism(shell, 9, (ex, ey, 40), rz, gold, parts, 8)
+    for (sx, sy, sa) in [(-19, 40, 35), (16, 14, 30), (9, 64, 30)]:
+        wx, wy = l2w(sx, sy)
+        o = cyl(5.5, 1.0, (wx, wy, 49.4), slotm, parts, 0.3)
+        o.scale = (1.0, 2.6, 1.0)
+        o.rotation_euler = (0, 0, rz + math.radians(sa))
+        wx2, wy2 = l2w(sx + 1.5, sy - 1.5)
+        cyl(2.6, 1.4, (wx2, wy2, 49.8), silver, parts, 0.4)
+    # 은색 작은 점(레퍼런스의 마크)
+    mx, my = l2w(-26, 73)
+    sph(2.4, (mx, my, 49.6), (1, 0.6, 0.3), silver, parts)
+    # 암과 이어지는 황동 통(칼라)
+    d3 = Vector((d.x, d.y, 0))
+    bx, by = l2w(0, -14)
+    o = cyl(14, 20, (bx, by, 46), gold, parts, 3)
+    o.rotation_euler = d3.to_track_quat('Z', 'Y').to_euler()
+    # 바늘(붉은 갈색 캔틸레버)
+    nx, ny = l2w(14, 98)
+    o = box((4, 38, 3), (nx, ny, 34), rz + math.radians(-20), wine, parts, 0.8)
     bow_bell(parts, 60, -585, gold)
 
 def knobs(parts):
