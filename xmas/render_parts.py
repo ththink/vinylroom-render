@@ -148,6 +148,20 @@ def chaikin(v, n=3):
         v = o
     return v
 
+def micro(m, scale=150, strength=0.04, dist=0.4):
+    # 미세한 금속 질감(범프): 표면 결·잔 스크래치
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    n = nt.nodes.new('ShaderNodeTexNoise')
+    n.inputs['Scale'].default_value = scale
+    n.inputs['Detail'].default_value = 10
+    bp = nt.nodes.new('ShaderNodeBump')
+    bp.inputs['Strength'].default_value = strength
+    bp.inputs['Distance'].default_value = dist
+    nt.links.new(n.outputs['Fac'], bp.inputs['Height'])
+    nt.links.new(bp.outputs['Normal'], b.inputs['Normal'])
+    return m
+
 def prism(verts, h, loc, rz, m, parts, bevel=2.0):
     n = len(verts)
     vs = [(x, y, 0) for x, y in verts] + [(x, y, h) for x, y in verts]
@@ -225,7 +239,7 @@ def bow_bell(parts, x, y, gold, k=1.7):
     bell(parts, (x + 58, y - 44, 62), gold, 1.3)
 
 def tonearm(parts):
-    gold = mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18)
+    gold = micro(mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18), 150, 0.03)
     brass = mat('brass', (0.30, 0.18, 0.06), 1.0, 0.3)
     pts = [(0, 0), (40, -150), (76, -336), (66, -500), (43, -662), (-2, -724), (-34, -772)]
     cu = bpy.data.curves.new('arm', 'CURVE')
@@ -255,33 +269,46 @@ def tonearm(parts):
     wine = mat('wine', (0.32, 0.04, 0.03), 0.6, 0.35)
     silver = mat('silver', (0.9, 0.9, 0.92), 1.0, 0.22)
     slotm = mat('slot', (0.10, 0.05, 0.02), 0.0, 0.5)
-    shell = chaikin([(-21, -8), (21, -8), (42, 88), (-42, 88)], 1)
-    bronze = mat('bronze', (0.66, 0.43, 0.16), 1.0, 0.28)
-    prism([(x * 1.05, y * 1.03 - 1) for x, y in shell], 7, (ex, ey, 34), rz, wine, parts, 1.5)
-    prism(shell, 11, (ex, ey, 40), rz, bronze, parts, 3.2)
-    for (sx, sy, sa) in [(-19, 40, 35), (16, 14, 30), (9, 64, 30)]:
+    # 위가 좁고 길게 퍼지는 방패꼴(오각형) → 모서리 살짝 깎기
+    shell = chaikin([(-24, -8), (24, -8), (37, 56), (38, 98), (-32, 106), (-42, 60)], 1)
+    inner = [(x * 0.86, y * 0.86 + 7) for x, y in shell]
+    bronze = micro(mat('bronze', (0.50, 0.33, 0.12), 1.0, 0.30), 110, 0.05)
+    bronze2 = micro(mat('bronze2', (0.62, 0.42, 0.17), 1.0, 0.22), 110, 0.04)
+    brass2 = mat('brass2', (0.55, 0.36, 0.12), 1.0, 0.25)
+    prism([(x * 1.05, y * 1.03 - 1) for x, y in shell], 8, (ex, ey, 33), rz, wine, parts, 1.8)
+    prism(shell, 11, (ex, ey, 40), rz, bronze, parts, 3.0)
+    prism(inner, 1.4, (ex, ey, 51), rz, bronze2, parts, 0.5)
+    # 슬롯 3개는 판 안쪽에 여유를 두고 배치 (슬롯 반길이 약 10)
+    for (sx, sy, sa) in [(8, 22, 28), (-18, 56, 34), (16, 80, 28)]:
         wx, wy = l2w(sx, sy)
-        o = cyl(5.5, 1.0, (wx, wy, 51.4), slotm, parts, 0.3)
-        o.scale = (1.0, 3.3, 1.0)
+        o = cyl(4.2, 1.2, (wx, wy, 52.6), slotm, parts, 0.3)
+        o.scale = (1.0, 2.4, 1.0)
         o.rotation_euler = (0, 0, rz + math.radians(sa))
-        wx2, wy2 = l2w(sx + 1.5, sy - 1.5)
-        cyl(2.6, 1.4, (wx2, wy2, 51.8), silver, parts, 0.4)
-    # 은색 작은 점(레퍼런스의 마크)
-    mx, my = l2w(-26, 73)
-    sph(2.4, (mx, my, 51.6), (1, 0.6, 0.3), silver, parts)
-    # 암과 이어지는 황동 통(칼라)
+        # 슬롯 안 황동 블록과 은색 나사(머리 홈 포함)
+        bx2, by2 = l2w(sx + 0.8, sy + 4.5)
+        box((3.4, 7.5, 1.2), (bx2, by2, 53.0), rz + math.radians(sa), brass2, parts, 0.4)
+        wx2, wy2 = l2w(sx - 0.6, sy - 3.2)
+        cyl(3.0, 1.6, (wx2, wy2, 53.4), silver, parts, 0.5)
+        t2 = tor(3.1, 0.55, (wx2, wy2, 53.2), slotm, parts)
+        box((4.6, 0.7, 0.8), (wx2, wy2, 54.3), rz + math.radians(sa + 40), slotm, parts, 0.1)
+    mx, my = l2w(-27, 82)
+    sph(2.6, (mx, my, 52.6), (1, 0.6, 0.3), silver, parts)
+    # 암과 이어지는 통(칼라): 판 목 너비(±24) 안에 들어가는 크기
     d3 = Vector((d.x, d.y, 0))
     bx, by = l2w(0, -14)
     rot3 = d3.to_track_quat('Z', 'Y').to_euler()
-    o = cyl(19, 26, (bx, by, 48), gold, parts, 4)
+    o = cyl(18, 26, (bx, by, 48), gold, parts, 4)
     o.rotation_euler = rot3
-    r2 = tor(18, 2.6, (bx + d.x * 9, by + d.y * 9, 48), gold, parts)
+    r2 = tor(17.2, 2.4, (bx + d.x * 9, by + d.y * 9, 48), gold, parts)
     r2.rotation_euler = rot3
-    r3 = tor(18, 2.6, (bx - d.x * 9, by - d.y * 9, 48), gold, parts)
+    r3 = tor(17.2, 2.4, (bx - d.x * 9, by - d.y * 9, 48), gold, parts)
     r3.rotation_euler = rot3
-    # 바늘(붉은 갈색 캔틸레버)
-    nx, ny = l2w(14, 98)
-    o = box((4, 38, 3), (nx, ny, 34), rz + math.radians(-20), wine, parts, 0.8)
+    # 바늘: 판 아래에서 바깥으로 나오는 가늘고 긴 테이퍼 캔틸레버 + 끝점
+    needle = mat('needle', (0.45, 0.05, 0.04), 0.9, 0.22)
+    nx, ny = l2w(6, 96)
+    prism([(-3.2, 0), (3.2, 0), (1.2, 60), (-1.2, 60)], 3.2, (nx, ny, 32), rz + math.radians(-16), needle, parts, 0.6)
+    tx, ty = l2w(6 + 60 * math.sin(math.radians(16)), 96 + 60 * math.cos(math.radians(16)))
+    sph(2.4, (tx, ty, 33.6), (1, 1, 1), silver, parts)
     bow_bell(parts, 60, -585, gold)
 
 def knobs(parts):
