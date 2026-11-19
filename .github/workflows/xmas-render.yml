@@ -1,0 +1,36 @@
+# 크리스마스 3D 부품 렌더. .github/workflows/xmas-render.yml 로 웹 업로드해서 사용.
+# Actions → xmas-render → Run workflow (브랜치 xmas-assets 선택). 결과는 xmas-render-out 브랜치 render/ 폴더.
+name: xmas-render
+on:
+  workflow_dispatch:
+  push:
+    branches: [xmas-assets]
+    paths: ["xmas/**", ".github/workflows/xmas-render.yml"]
+permissions:
+  contents: write
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BL: blender-4.2.3-linux-x64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Blender 설치
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1
+          curl -sL https://download.blender.org/release/Blender4.2/$BL.tar.xz | tar xJ
+      - name: 렌더
+        run: |
+          set -o pipefail; mkdir -p render
+          ./$BL/blender -b -P xmas/render_parts.py -- --outdir render --samples 96 --scale 2 2>&1 | tee render/last_log.txt
+      - name: 결과 커밋 (실패해도 로그는 올림)
+        if: always()
+        run: |
+          git config user.name render-bot
+          git config user.email render-bot@users.noreply.github.com
+          git switch -C xmas-render-out
+          git add -f render
+          git commit -qm "xmas render: ${{ job.status }}"
+          git push -f origin xmas-render-out
