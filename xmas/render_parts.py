@@ -168,8 +168,48 @@ def tor(R, r, loc, m, parts):
     bpy.ops.object.shade_smooth()
     return link(o, parts, m)
 
+def lathe(profile, segs, loc, rot, m, parts):
+    # (반지름, 높이) 단면을 회전시켜 종 같은 회전체를 만든다
+    n = len(profile)
+    vs, fs = [], []
+    for j in range(segs):
+        a = 2 * math.pi * j / segs
+        for (r, z) in profile:
+            vs.append((r * math.cos(a), r * math.sin(a), z))
+    for j in range(segs):
+        j2 = (j + 1) % segs
+        for i in range(n - 1):
+            fs.append([j * n + i, j2 * n + i, j2 * n + i + 1, j * n + i + 1])
+    me = bpy.data.meshes.new('lathe')
+    me.from_pydata(vs, [], fs)
+    me.update()
+    for pl in me.polygons:
+        pl.use_smooth = True
+    o = bpy.data.objects.new('lathe', me)
+    bpy.context.collection.objects.link(o)
+    o.location = loc
+    o.rotation_euler = rot
+    return link(o, parts, m)
+
+def bell(parts, apex, gold, k=1.05):
+    # 입이 카메라 쪽으로 보이게 기울어진 종: 입(어두운 안쪽) + 추 + 윗고리
+    u = Vector((0.6, -0.6, 0.5)).normalized()
+    origin = Vector(apex) + u * (42 * k)
+    rot = u.to_track_quat('-Z', 'Y').to_euler()
+    prof = [(3, 44), (7, 43), (12, 38), (15, 29), (17, 18), (20, 9), (25, 3.5), (28.5, 0), (27, -1.2), (25, 0)]
+    prof = [(r * k, z * k) for r, z in prof]
+    lathe(prof, 56, origin, rot, gold, parts)
+    dk = mat('bellin', (0.03, 0.015, 0.006), 0.0, 0.5)
+    o = cyl(24.5 * k, 1.0, (0, 0, 0), dk, parts, 0.2)
+    o.location = origin + u * (0.5 * k)
+    o.rotation_euler = rot
+    s = sph(6.5 * k, (0, 0, 0), (1, 1, 1), gold, parts)
+    s.location = origin + u * (2 * k)
+    h = tor(5.5 * k, 1.8 * k, (0, 0, 0), gold, parts)
+    h.location = Vector(apex) - u * (3 * k)
+    h.rotation_euler = rot
+
 def bow_bell(parts, x, y, gold, k=1.7):
-    # 리본 매듭(빨강+초록)과 금색 종. k = 크기 배율
     red = mat('ribred', (0.55, 0.02, 0.03), 0.0, 0.55, 0.0)
     grn = mat('ribgrn', (0.03, 0.30, 0.10), 0.0, 0.55, 0.0)
     z = 72
@@ -179,11 +219,7 @@ def bow_bell(parts, x, y, gold, k=1.7):
     for ang, m, dx in [(-20, red, -8), (20, grn, 9)]:
         box((9 * k, 38 * k, 3), (x + dx * k, y - 22 * k, z - 4), math.radians(ang), m, parts, 1)
     sph(8 * k, (x, y + 4 * k, z + 2), (1, 1, 0.7), red, parts)
-    bx, by = x + 34 * k * 0.9, y - 34 * k * 0.9
-    sph(17 * k, (bx, by, 50), (1, 1, 0.95), gold, parts)
-    tor(15 * k, 3.2 * k, (bx, by, 36), gold, parts)
-    tor(5 * k, 1.8 * k, (bx, by, 50 + 17 * k * 0.9), gold, parts)
-    box((3, 15 * k, 3), (bx, by - 10 * k, 50 + 17 * k * 0.75), 0, mat('slit', (0.05, 0.03, 0.01), 0, 0.5), parts, 0.5)
+    bell(parts, (x + 24, y - 20, 62), gold)
 
 def tonearm(parts):
     gold = mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18)
