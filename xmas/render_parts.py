@@ -137,6 +137,17 @@ def turned_metal(name, col, rough=0.3):
     nt.links.new(tg.outputs['Tangent'], b.inputs['Tangent'])
     return m
 
+def chaikin(v, n=3):
+    # 모서리 둥글리기(코너 컷팅 반복)
+    for _ in range(n):
+        o = []
+        for i in range(len(v)):
+            a, b = v[i], v[(i + 1) % len(v)]
+            o.append((0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]))
+            o.append((0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]))
+        v = o
+    return v
+
 def prism(verts, h, loc, rz, m, parts, bevel=2.0):
     n = len(verts)
     vs = [(x, y, 0) for x, y in verts] + [(x, y, h) for x, y in verts]
@@ -244,24 +255,30 @@ def tonearm(parts):
     wine = mat('wine', (0.32, 0.04, 0.03), 0.6, 0.35)
     silver = mat('silver', (0.9, 0.9, 0.92), 1.0, 0.22)
     slotm = mat('slot', (0.10, 0.05, 0.02), 0.0, 0.5)
-    shell = [(-20, -6), (20, -6), (36, 86), (-36, 86)]
-    prism([(x * 1.06, y * 1.04 - 1) for x, y in shell], 6, (ex, ey, 35), rz, wine, parts, 3)
-    prism(shell, 9, (ex, ey, 40), rz, gold, parts, 4.5)
+    shell = chaikin([(-22, -8), (22, -8), (40, 90), (-40, 90)], 3)
+    bronze = mat('bronze', (0.66, 0.43, 0.16), 1.0, 0.28)
+    prism([(x * 1.05, y * 1.03 - 1) for x, y in shell], 7, (ex, ey, 34), rz, wine, parts, 1.5)
+    prism(shell, 11, (ex, ey, 40), rz, bronze, parts, 2.2)
     for (sx, sy, sa) in [(-19, 40, 35), (16, 14, 30), (9, 64, 30)]:
         wx, wy = l2w(sx, sy)
-        o = cyl(5.5, 1.0, (wx, wy, 49.4), slotm, parts, 0.3)
+        o = cyl(5.5, 1.0, (wx, wy, 51.4), slotm, parts, 0.3)
         o.scale = (1.0, 2.6, 1.0)
         o.rotation_euler = (0, 0, rz + math.radians(sa))
         wx2, wy2 = l2w(sx + 1.5, sy - 1.5)
-        cyl(2.6, 1.4, (wx2, wy2, 49.8), silver, parts, 0.4)
+        cyl(2.6, 1.4, (wx2, wy2, 51.8), silver, parts, 0.4)
     # 은색 작은 점(레퍼런스의 마크)
     mx, my = l2w(-26, 73)
-    sph(2.4, (mx, my, 49.6), (1, 0.6, 0.3), silver, parts)
+    sph(2.4, (mx, my, 51.6), (1, 0.6, 0.3), silver, parts)
     # 암과 이어지는 황동 통(칼라)
     d3 = Vector((d.x, d.y, 0))
     bx, by = l2w(0, -14)
-    o = cyl(14, 20, (bx, by, 46), gold, parts, 3)
-    o.rotation_euler = d3.to_track_quat('Z', 'Y').to_euler()
+    rot3 = d3.to_track_quat('Z', 'Y').to_euler()
+    o = cyl(19, 26, (bx, by, 48), gold, parts, 4)
+    o.rotation_euler = rot3
+    r2 = tor(18, 2.6, (bx + d.x * 9, by + d.y * 9, 48), gold, parts)
+    r2.rotation_euler = rot3
+    r3 = tor(18, 2.6, (bx - d.x * 9, by - d.y * 9, 48), gold, parts)
+    r3.rotation_euler = rot3
     # 바늘(붉은 갈색 캔틸레버)
     nx, ny = l2w(14, 98)
     o = box((4, 38, 3), (nx, ny, 34), rz + math.radians(-20), wine, parts, 0.8)
