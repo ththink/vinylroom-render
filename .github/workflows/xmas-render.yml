@@ -20,7 +20,8 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 libegl1
-          curl -sL https://download.blender.org/release/Blender4.2/$BL.tar.xz | tar xJ
+          curl -fL --retry 6 --retry-delay 10 --retry-all-errors -o bl.tar.xz https://download.blender.org/release/Blender4.2/$BL.tar.xz
+          tar xJf bl.tar.xz
       - name: 렌더
         run: |
           set -o pipefail; mkdir -p render
@@ -28,6 +29,7 @@ jobs:
       - name: 결과 커밋 (실패해도 로그는 올림)
         if: always()
         run: |
+          mkdir -p render
           git config user.name render-bot
           git config user.email render-bot@users.noreply.github.com
           git switch -C xmas-render-out
