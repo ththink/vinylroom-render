@@ -210,16 +210,8 @@ def bell(parts, apex, gold, k=1.05):
     h.rotation_euler = rot
 
 def bow_bell(parts, x, y, gold, k=1.7):
-    red = mat('ribred', (0.55, 0.02, 0.03), 0.0, 0.55, 0.0)
-    grn = mat('ribgrn', (0.03, 0.30, 0.10), 0.0, 0.55, 0.0)
-    z = 72
-    for ang, m, dx in [(35, red, -17), (-35, grn, 17)]:
-        o = sph(14 * k, (x + dx * k, y + 6 * k, z), (1.7, 0.75, 0.4), m, parts)
-        o.rotation_euler = (0, 0, math.radians(ang))
-    for ang, m, dx in [(-20, red, -8), (20, grn, 9)]:
-        box((9 * k, 38 * k, 3), (x + dx * k, y - 22 * k, z - 4), math.radians(ang), m, parts, 1)
-    sph(8 * k, (x, y + 4 * k, z + 2), (1, 1, 0.7), red, parts)
-    bell(parts, (x + 24, y - 20, 62), gold)
+    # 리본은 레퍼런스 컷아웃(2D 스프라이트)을 합성 단계에서 얹는다. 여기서는 톤암 옆에 매달린 종만 만든다.
+    bell(parts, (x + 58, y - 44, 62), gold, 1.3)
 
 def tonearm(parts):
     gold = mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18)
