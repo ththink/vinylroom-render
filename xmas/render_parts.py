@@ -234,9 +234,10 @@ def bell(parts, apex, gold, k=1.05):
     h.location = Vector(apex) - u * (3 * k)
     h.rotation_euler = rot
 
-def bow_bell(parts, x, y, gold, k=1.7):
-    # 리본은 레퍼런스 컷아웃(2D 스프라이트)을 합성 단계에서 얹는다. 여기서는 톤암 옆에 매달린 종만 만든다.
-    bell(parts, (x + 58, y - 44, 62), gold, 1.3)
+def bell_only(parts):
+    # 종 단독 렌더: 윗고리(apex)가 회전 중심. 톤암 피벗 기준 apex = (118, -629)
+    gold = micro(mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18), 150, 0.03)
+    bell(parts, (118, -629, 62), gold, 1.3)
 
 def tonearm(parts):
     gold = micro(mat('gold', (0.80, 0.52, 0.15), 1.0, 0.18), 150, 0.03)
@@ -307,7 +308,6 @@ def tonearm(parts):
     needle = mat('needle', (0.45, 0.05, 0.04), 0.9, 0.22)
     nx, ny = l2w(6, 96)
     prism([(-3.2, 0), (3.2, 0), (1.2, 60), (-1.2, 60)], 3.2, (nx, ny, 32), rz + math.radians(-16), needle, parts, 0.6)
-    bow_bell(parts, 60, -585, gold)
 
 def knobs(parts):
     # 레퍼런스 구조: 에나멜 링 + 어두운 홈 + 평평한 결 금속 캡 + 어두운 눈금 점 9개 + 작은 지시 조각
@@ -359,4 +359,5 @@ if __name__ == '__main__':
     a = get_args()
     run_job('tonearm', tonearm, 0, -400, 600, 1040, a)
     run_job('knobs', knobs, 200, 0, 600, 200, a)
+    run_job('bell', bell_only, 148, -659, 240, 240, a)
     print('done')
